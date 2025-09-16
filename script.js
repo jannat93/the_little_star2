@@ -276,7 +276,7 @@ function renderLoop(){
 }
 
 // NASA APOD integration
-const NASA_API_KEY = 'DEMO_KEY'; // replace with your API key
+const NASA_API_KEY = 'PYXsvSeHJbwMEqQ1RGeittsd7gfSxKvGu5DCr4mT'; // replace with your API key
 const APOD_URL = `https://api.nasa.gov/planetary/apod?api_key=${NASA_API_KEY}`;
 
 nasaBtn.addEventListener('click', async ()=>{
