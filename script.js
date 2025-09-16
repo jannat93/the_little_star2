@@ -61,8 +61,8 @@ const nasaDesc = document.getElementById("nasa-desc");
 const nasaInfo = document.getElementById("nasa-info");
 
 // Replace with your own NASA API key (get it free from api.nasa.gov)
-const NASA_API_KEY = "DEMO_KEY";  
-const NASA_APOD_URL = `https://api.nasa.gov/planetary/apod?api_key=${PYXsvSeHJbwMEqQ1RGeittsd7gfSxKvGu5DCr4mT}`;
+const NASA_API_KEY = "PYXsvSeHJbwMEqQ1RGeittsd7gfSxKvGu5DCr4mT";  
+const NASA_APOD_URL = `https://api.nasa.gov/planetary/apod?api_key=${NASA_API_KEY}`;
 
 nasaBtn.addEventListener("click", async () => {
   try {
