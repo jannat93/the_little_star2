@@ -1,47 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>The Little Sky — AR</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>The Little Sky AR</title>
+<style>
+  body, html { margin:0; padding:0; overflow:hidden; background:black; }
+  #overlay { position:absolute; top:0; left:0; }
+  #controls { position:absolute; top:5px; left:5px; color:white; font-family:sans-serif; z-index:10; }
+  #status { margin-bottom:5px; }
+  #nasaCard { position:absolute; top:50px; left:50px; width:300px; background:#111; color:white; padding:10px; display:none; z-index:20; border-radius:8px;}
+  #nasaImage { width:100%; }
+</style>
 </head>
 <body>
-  <div id="app">
-    <video id="cam" autoplay playsinline muted></video>
-    <canvas id="overlay"></canvas>
 
-    <div id="ui">
-      <div class="row">
-        <button id="btnStart">Start Camera & AR</button>
-        <button id="btnMotion">Allow Motion</button>
-        <button id="btnNASA">Show NASA APOD</button>
-      </div>
+<video id="cam" autoplay playsinline style="display:none;"></video>
+<canvas id="overlay"></canvas>
 
-      <div class="row">
-        <label>Pollution: <span id="pollLabel">80%</span></label>
-        <input id="pollution" type="range" min="0" max="100" value="80">
-        <button id="cleanBtn">Clean (Reveal)</button>
-      </div>
+<div id="controls">
+  <div id="status">Status: ready</div>
+  <button id="btnStart">Start Camera</button>
+  <button id="btnMotion">Allow Motion</button>
+  <label>Pollution: <span id="pollLabel">50%</span></label>
+  <input type="range" id="pollution" min="0" max="100" value="50">
+  <button id="cleanBtn">Clean</button>
+  <label>FOV: <span id="fovVal">60</span></label>
+  <input type="range" id="fov" min="30" max="120" value="60">
+  <button id="btnNASA">NASA APOD</button>
+</div>
 
-      <div class="row small">
-        <label>FOV (deg): <span id="fovVal">60</span></label>
-        <input id="fov" type="range" min="30" max="100" value="60">
-      </div>
+<div id="nasaCard">
+  <h3 id="nasaTitle"></h3>
+  <img id="nasaImage">
+  <p id="nasaDesc"></p>
+  <button id="closeNasa">Close</button>
+</div>
 
-      <div id="status">Status: idle</div>
-    </div>
-
-    <div id="nasaCard" class="card" hidden>
-      <button id="closeNasa" class="close">✖</button>
-      <h3 id="nasaTitle"></h3>
-      <img id="nasaImage" alt="NASA APOD">
-      <p id="nasaDesc"></p>
-    </div>
-  </div>
-
-  <!-- Astronomy Engine (browser) -->
-  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine/astronomy.browser.min.js"></script>
-  <script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.3.1/dist/astronomy.min.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
