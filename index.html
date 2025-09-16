@@ -1,28 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Little Sky</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Little Sky — AR</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="camera-container">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="sky-overlay"></canvas>
+  <div id="app">
+    <video id="cam" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+
+    <div id="ui">
+      <div class="row">
+        <button id="btnStart">Start Camera & AR</button>
+        <button id="btnMotion">Allow Motion</button>
+        <button id="btnNASA">Show NASA APOD</button>
+      </div>
+
+      <div class="row">
+        <label>Pollution: <span id="pollLabel">80%</span></label>
+        <input id="pollution" type="range" min="0" max="100" value="80">
+        <button id="cleanBtn">Clean (Reveal)</button>
+      </div>
+
+      <div class="row small">
+        <label>FOV (deg): <span id="fovVal">60</span></label>
+        <input id="fov" type="range" min="30" max="100" value="60">
+      </div>
+
+      <div id="status">Status: idle</div>
+    </div>
+
+    <div id="nasaCard" class="card" hidden>
+      <button id="closeNasa" class="close">✖</button>
+      <h3 id="nasaTitle"></h3>
+      <img id="nasaImage" alt="NASA APOD">
+      <p id="nasaDesc"></p>
+    </div>
   </div>
 
-  <div id="controls">
-    <button id="start-btn">Start AR Sky</button>
-    <button id="nasa-btn">Show NASA APOD</button>
-  </div>
-
-  <div id="nasa-info">
-    <h2 id="nasa-title"></h2>
-    <img id="nasa-image" alt="NASA Astronomy Picture of the Day" />
-    <p id="nasa-desc"></p>
-  </div>
-
+  <!-- Astronomy Engine (browser) -->
+  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine/astronomy.browser.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
