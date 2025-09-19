@@ -1,42 +1,244 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>The Little Sky AR</title>
-<style>
-  body, html { margin:0; padding:0; overflow:hidden; background:black; }
-  #overlay { position:absolute; top:0; left:0; }
-  #controls { position:absolute; top:5px; left:5px; color:white; font-family:sans-serif; z-index:10; }
-  #status { margin-bottom:5px; }
-  #nasaCard { position:absolute; top:50px; left:50px; width:300px; background:#111; color:white; padding:10px; display:none; z-index:20; border-radius:8px;}
-  #nasaImage { width:100%; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        #scene-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .ui-panel {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem;
+            background-color: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 95%;
+            text-align: center;
+        }
+
+        .message-box {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem;
+            background-color: rgba(30, 64, 175, 0.5);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #60a5fa;
+            border-radius: 0.75rem;
+            z-index: 10;
+            max-width: 90%;
+            text-align: left;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .message-box.visible {
+            opacity: 1;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-200">
+    <div id="scene-container">
+        <div class="ui-panel">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">Interactive Sky Guide</h1>
+            <p class="text-sm sm:text-base text-slate-400">
+                Explore the cosmos from your location. Drag to look around.
+            </p>
+            <div class="flex justify-center gap-4 mt-2">
+                <button id="toggle-view" class="px-5 py-2 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors transform hover:scale-105 active:scale-95 shadow-md">
+                    Show Polluted View
+                </button>
+            </div>
+        </div>
+        <div id="message-box" class="message-box">
+            <p id="message-text" class="text-sm sm:text-base text-blue-100"></p>
+        </div>
+        <canvas id="sky-canvas"></canvas>
+    </div>
 
-<video id="cam" autoplay playsinline style="display:none;"></video>
-<canvas id="overlay"></canvas>
+    <script>
+        // Set log level
+        // setLogLevel('Debug');
 
-<div id="controls">
-  <div id="status">Status: ready</div>
-  <button id="btnStart">Start Camera</button>
-  <button id="btnMotion">Allow Motion</button>
-  <label>Pollution: <span id="pollLabel">50%</span></label>
-  <input type="range" id="pollution" min="0" max="100" value="50">
-  <button id="cleanBtn">Clean</button>
-  <label>FOV: <span id="fovVal">60</span></label>
-  <input type="range" id="fov" min="30" max="120" value="60">
-  <button id="btnNASA">NASA APOD</button>
-</div>
+        let camera, scene, renderer, controls;
+        let isPolluted = false;
+        const toggleButton = document.getElementById('toggle-view');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
 
-<div id="nasaCard">
-  <h3 id="nasaTitle"></h3>
-  <img id="nasaImage">
-  <p id="nasaDesc"></p>
-  <button id="closeNasa">Close</button>
-</div>
+        // Stars and celestial objects data
+        const celestialObjects = [
+            { name: "Polaris", color: 0xffffff, size: 0.1, position: new THREE.Vector3(0, 10, 0) },
+            { name: "Mars", color: 0xff4500, size: 0.2, position: new THREE.Vector3(5, 2, -8) },
+            { name: "Sirius", color: 0xadd8e6, size: 0.15, position: new THREE.Vector3(-7, -4, 5) },
+            { name: "Jupiter", color: 0xf4a460, size: 0.25, position: new THREE.Vector3(-10, 3, 2) },
+            { name: "Orion", color: 0xffffff, size: 0.08, position: new THREE.Vector3(8, -8, -10) },
+            { name: "The Moon", color: 0xd3d3d3, size: 0.3, position: new THREE.Vector3(1, -2, -6) },
+            { name: "Venus", color: 0xffe4b5, size: 0.2, position: new THREE.Vector3(-4, 0, -8) },
+            { name: "Cassiopeia", color: 0xffffff, size: 0.08, position: new THREE.Vector3(-5, 8, -5) },
+        ];
 
-<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.3.1/dist/astronomy.min.js"></script>
-<script src="script.js"></script>
+        function init() {
+            const container = document.getElementById('scene-container');
+            const canvas = document.getElementById('sky-canvas');
+
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1a);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 10);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+            scene.add(ambientLight);
+
+            // Add a directional light for a sense of direction
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // Create celestial objects
+            celestialObjects.forEach(obj => {
+                const geometry = new THREE.SphereGeometry(obj.size, 32, 32);
+                const material = new THREE.MeshBasicMaterial({ color: obj.color, transparent: true, opacity: 1 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.copy(obj.position);
+                mesh.name = obj.name;
+                scene.add(mesh);
+
+                // Add text label for each object
+                const loader = new THREE.FontLoader();
+                const fontUrl = 'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json';
+                loader.load(fontUrl, function (font) {
+                    const textGeometry = new THREE.TextGeometry(obj.name, {
+                        font: font,
+                        size: 0.2,
+                        height: 0.05,
+                        curveSegments: 12,
+                        bevelEnabled: false
+                    });
+                    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    textMesh.position.copy(obj.position);
+                    textMesh.position.add(new THREE.Vector3(0.5, 0.5, 0)); // Offset the text slightly
+                    textMesh.lookAt(camera.position); // Make text always face the camera
+                    textMesh.name = `${obj.name}_label`;
+                    scene.add(textMesh);
+                });
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+
+            // Update label orientation to always face the camera
+            scene.children.forEach(child => {
+                if (child.name.endsWith('_label')) {
+                    child.lookAt(camera.position);
+                }
+            });
+        }
+
+        function showMessage(text) {
+            messageText.textContent = text;
+            messageBox.classList.add('visible');
+            setTimeout(() => {
+                messageBox.classList.remove('visible');
+            }, 5000);
+        }
+
+        toggleButton.addEventListener('click', () => {
+            isPolluted = !isPolluted;
+            if (isPolluted) {
+                toggleButton.textContent = 'Show Clear View';
+                scene.background.set(0x010101); // Darken the background
+                scene.children.forEach(child => {
+                    if (child.isMesh && child.material) {
+                        child.material.color.set(0x555555); // Dim all stars
+                        child.material.opacity = 0.2;
+                    }
+                });
+                showMessage("Simulated view with pollution. The dim objects are not visible. The bright ones are shown using NASA data.");
+            } else {
+                toggleButton.textContent = 'Show Polluted View';
+                scene.background.set(0x0a0a1a); // Original background
+                scene.children.forEach(child => {
+                    if (child.isMesh && child.material) {
+                        // Reset colors to original
+                        const originalColor = celestialObjects.find(obj => obj.name === child.name)?.color;
+                        if (originalColor) {
+                            child.material.color.set(originalColor);
+                            child.material.opacity = 1;
+                        }
+                    }
+                });
+                showMessage("Switched to clear view. You can see all celestial objects clearly now.");
+            }
+        });
+
+        // Start the scene on load
+        window.onload = function() {
+            init();
+            animate();
+        };
+    </script>
 </body>
 </html>
